@@ -1,18 +1,15 @@
 name: 'crane-plus'
-description: '一个基于 Crane 支持多模式的镜像同步工具'
-inputs:
-  src:
-    description: '源镜像(支持单体/多行列表/配置文件路径)'
-    required: true
-  dst:
-    description: '目标仓库前缀'
-    required: true
-  platform:
-    description: '目标架构'
-    required: false
-  max_concurrent:
-    description: '最大并发数'
-    default: '4'
+description: '一个支持多模式的镜像同步工具'
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "composite"
+  steps:
+    - name: Run sync script
+      shell: bash
+      # 告诉 GitHub 运行你仓库里的这个脚本
+      run: ${{ github.action_path }}/entrypoint.sh
+      env:
+        # 将参数通过环境变量传进去，脚本代码甚至不用大改
+        INPUT_SRC: ${{ inputs.src }}
+        INPUT_DST: ${{ inputs.dst }}
+        INPUT_PLATFORM: ${{ inputs.platform }}
+        INPUT_MAX_CONCURRENT: ${{ inputs.max_concurrent }}
