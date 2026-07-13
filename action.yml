@@ -18,12 +18,14 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # 这一步会自动把 crane 安装到 Runner 的系统 PATH 里
+    - name: Setup Crane
+      uses: imjasonh/setup-crane@v0.7
+      
     - name: Run entrypoint
       shell: bash
-      # 直接用 bash 运行，绕过执行权限问题
       run: bash ${{ github.action_path }}/entrypoint.sh
       env:
-        # 这里把 inputs 映射为脚本能读到的环境变量 (INPUT_xxx)
         INPUT_SRC: ${{ inputs.src }}
         INPUT_DST: ${{ inputs.dst }}
         INPUT_PLATFORM: ${{ inputs.platform }}
