@@ -1,0 +1,18 @@
+name: 'Docker Image Sync With Crane'
+description: '一个基于 Crane 支持多模式的镜像同步工具'
+inputs:
+  src:
+    description: '源镜像(支持单体/多行列表/配置文件路径)'
+    required: true
+  dst:
+    description: '目标仓库前缀'
+    required: true
+  platform:
+    description: '目标架构'
+    required: false
+  max_concurrent:
+    description: '最大并发数'
+    default: '4'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
