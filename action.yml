@@ -1,14 +1,29 @@
 name: 'crane-plus'
 description: '一个支持多模式的镜像同步工具'
+
+inputs:
+  src:
+    description: '源镜像'
+    required: true
+  dst:
+    description: '目标仓库前缀'
+    required: true
+  platform:
+    description: '目标架构'
+    required: false
+  max_concurrent:
+    description: '最大并发数'
+    default: '4'
+
 runs:
   using: "composite"
   steps:
-    - name: Run sync script
+    - name: Run entrypoint
       shell: bash
-      # 告诉 GitHub 运行你仓库里的这个脚本
-      run: ${{ github.action_path }}/entrypoint.sh
+      # 直接用 bash 运行，绕过执行权限问题
+      run: bash ${{ github.action_path }}/entrypoint.sh
       env:
-        # 将参数通过环境变量传进去，脚本代码甚至不用大改
+        # 这里把 inputs 映射为脚本能读到的环境变量 (INPUT_xxx)
         INPUT_SRC: ${{ inputs.src }}
         INPUT_DST: ${{ inputs.dst }}
         INPUT_PLATFORM: ${{ inputs.platform }}
