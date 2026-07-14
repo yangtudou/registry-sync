@@ -1,112 +1,103 @@
 name: registry-sync
 description: Sync container images between registries
+branding:
+  icon: 'refresh-cw'
+  color: 'blue'
 
 inputs:
   src:
-    description: Single source image
+    description: 'Single source image'
     required: false
-
   images:
-    description: Multiple images list
+    description: 'Multiple images list'
     required: false
-
   file:
-    description: Image list file
+    description: 'Image list file'
     required: false
-
   dst:
-    description: Destination registry
+    description: 'Destination registry'
     required: true
-
   platform:
-    description: Target platform
+    description: 'Target platform'
     required: false
-    default: linux/amd64
-
+    default: 'linux/amd64'
   concurrency:
-    description: Worker concurrency
+    description: 'Worker concurrency'
     required: false
-    default: "4"
-
+    default: '4'
   retries:
-    description: Retry attempts
+    description: 'Retry attempts'
     required: false
-    default: "3"
+    default: '3'
+
+
+outputs:
+  sync-mode:
+    description: 'The mode used for syncing (single, batch, inline)'
+    value: ${{ steps.sync-step.outputs.MODE }}
 
 
 runs:
   using: composite
-
   steps:
-    - name: Install registry-sync
+    - name: Setup registry-sync
       shell: bash
       run: |
-        set -e
-
+        echo "::group::🔧 Setup Executable"
         chmod +x "$GITHUB_ACTION_PATH/bin/registry-sync"
-        sudo cp "$GITHUB_ACTION_PATH/bin/registry-sync" /usr/local/bin/registry-sync
+        echo "$GITHUB_ACTION_PATH/bin" >> $GITHUB_PATH
+        
+        if ! registry-sync --help > /dev/null 2>&1; then
+          echo "::warning title=Setup Issue::Failed to verify registry-sync execution. Binary might be corrupt or incompatible."
+        fi
+        echo "::endgroup::"
 
-
-    - name: Prepare images file
-      if: inputs.images != ''
+    - name: Execute registry-sync
+      id: sync-step
       shell: bash
+      env:
+        INPUT_SRC: ${{ inputs.src }}
+        INPUT_IMAGES: ${{ inputs.images }}
+        INPUT_FILE: ${{ inputs.file }}
+        INPUT_DST: ${{ inputs.dst }}
+        INPUT_PLATFORM: ${{ inputs.platform }}
+        INPUT_CONCURRENCY: ${{ inputs.concurrency }}
+        INPUT_RETRIES: ${{ inputs.retries }}
       run: |
-        set -e
+        set -euo pipefail
 
-        printf "%s\n" "${{ inputs.images }}" > /tmp/images.txt
+        echo "::group::🚀 Executing Sync"
+        
+        ARGS=(
+          "sync"
+          "--dst" "$INPUT_DST"
+          "--platform" "$INPUT_PLATFORM"
+          "--concurrency" "$INPUT_CONCURRENCY"
+          "--retries" "$INPUT_RETRIES"
+        )
 
-        echo "Prepared images:"
-        cat /tmp/images.txt
+        if [ -n "$INPUT_SRC" ]; then
+          echo "MODE=single" >> "$GITHUB_OUTPUT"
+          echo "Mode: Single image ($INPUT_SRC)"
+          registry-sync "${ARGS[@]}" --src "$INPUT_SRC"
 
+        elif [ -n "$INPUT_FILE" ]; then
+          echo "MODE=batch" >> "$GITHUB_OUTPUT"
+          echo "Mode: Image file ($INPUT_FILE)"
+          registry-sync "${ARGS[@]}" --file "$INPUT_FILE"
 
-    - name: Run registry-sync
-      shell: bash
-      run: |
-        set -e
-
-        if [ -n "${{ inputs.src }}" ]; then
-
-          echo "Mode: single image"
-
-          registry-sync sync \
-            --src "${{ inputs.src }}" \
-            --dst "${{ inputs.dst }}" \
-            --platform "${{ inputs.platform }}" \
-            --concurrency "${{ inputs.concurrency }}" \
-            --retries "${{ inputs.retries }}"
-
-
-        elif [ -n "${{ inputs.file }}" ]; then
-
-          echo "Mode: image file"
-
-          registry-sync sync \
-            --file "${{ inputs.file }}" \
-            --dst "${{ inputs.dst }}" \
-            --platform "${{ inputs.platform }}" \
-            --concurrency "${{ inputs.concurrency }}" \
-            --retries "${{ inputs.retries }}"
-
-
-        elif [ -n "${{ inputs.images }}" ]; then
-
-          echo "Mode: inline images"
-
-          registry-sync sync \
-            --file /tmp/images.txt \
-            --dst "${{ inputs.dst }}" \
-            --platform "${{ inputs.platform }}" \
-            --concurrency "${{ inputs.concurrency }}" \
-            --retries "${{ inputs.retries }}"
-
+        elif [ -n "$INPUT_IMAGES" ]; then
+          echo "MODE=inline" >> "$GITHUB_OUTPUT"
+          echo "Mode: Inline images"
+          printf "%s\n" "$INPUT_IMAGES" > /tmp/images.txt
+          registry-sync "${ARGS[@]}" --file /tmp/images.txt
 
         else
-
-          echo "Error: no images specified"
-          echo "Use one of:"
-          echo "  src:"
-          echo "  file:"
-          echo "  images:"
+          echo "::error title=Missing Input Parameters::You must specify one of: src, file, or images."
+          echo "::endgroup::"
           exit 1
-
         fi
+        
+        echo "::endgroup::"
+        
+        echo "::notice title=Sync Success::🎉 Registry sync completed successfully!"
