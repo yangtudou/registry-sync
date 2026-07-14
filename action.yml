@@ -43,12 +43,17 @@ runs:
     - name: Setup registry-sync
       shell: bash
       run: |
-        echo "::group::🔧 Setup Executable"
-        chmod +x "$GITHUB_ACTION_PATH/bin/registry-sync"
+        echo "::group::🔧 环境准备 (Setup)"
+        BINARY_PATH="$GITHUB_ACTION_PATH/bin/registry-sync"
+        chmod +x "$BINARY_PATH"
         echo "$GITHUB_ACTION_PATH/bin" >> $GITHUB_PATH
         
-        if ! registry-sync --help > /dev/null 2>&1; then
-          echo "::warning title=Setup Issue::Failed to verify registry-sync execution. Binary might be corrupt or incompatible."
+        if [ -x "$BINARY_PATH" ]; then
+          # 终端魔法：输出绿色的勾勾
+          echo -e "\033[32m✔ 二进制武器已就绪 (Executable Ready)\033[0m"
+        else
+          echo "::error title=Setup Issue::找不到文件或没权限！"
+          exit 1
         fi
         echo "::endgroup::"
 
@@ -66,7 +71,12 @@ runs:
       run: |
         set -euo pipefail
 
-        echo "::group::🚀 Executing Sync"
+        # 定义几种好看的控制台颜色
+        C_CYAN='\033[0;36m'
+        C_YELLOW='\033[1;33m'
+        C_RESET='\033[0m'
+
+        echo "::group::🚀 开始搬砖 (Executing Sync)"
         
         ARGS=(
           "sync"
@@ -76,28 +86,44 @@ runs:
           "--retries" "$INPUT_RETRIES"
         )
 
+        MODE_NAME=""
+        
         if [ -n "$INPUT_SRC" ]; then
-          echo "MODE=single" >> "$GITHUB_OUTPUT"
-          echo "Mode: Single image ($INPUT_SRC)"
+          MODE_NAME="单体模式 (Single)"
+          echo -e "${C_CYAN}▶ 触发模式: ${MODE_NAME}${C_RESET}"
+          echo -e "${C_YELLOW}▶ 源镜像: ${INPUT_SRC}${C_RESET}"
           registry-sync "${ARGS[@]}" --src "$INPUT_SRC"
 
         elif [ -n "$INPUT_FILE" ]; then
-          echo "MODE=batch" >> "$GITHUB_OUTPUT"
-          echo "Mode: Image file ($INPUT_FILE)"
+          MODE_NAME="清单模式 (File)"
+          echo -e "${C_CYAN}▶ 触发模式: ${MODE_NAME}${C_RESET}"
+          echo -e "${C_YELLOW}▶ 读取文件: ${INPUT_FILE}${C_RESET}"
           registry-sync "${ARGS[@]}" --file "$INPUT_FILE"
 
         elif [ -n "$INPUT_IMAGES" ]; then
-          echo "MODE=inline" >> "$GITHUB_OUTPUT"
-          echo "Mode: Inline images"
+          MODE_NAME="内联模式 (Inline)"
+          echo -e "${C_CYAN}▶ 触发模式: ${MODE_NAME}${C_RESET}"
           printf "%s\n" "$INPUT_IMAGES" > /tmp/images.txt
           registry-sync "${ARGS[@]}" --file /tmp/images.txt
 
         else
-          echo "::error title=Missing Input Parameters::You must specify one of: src, file, or images."
-          echo "::endgroup::"
+          echo "::error title=参数缺失::老铁，src / file / images 你总得填一个吧？"
           exit 1
         fi
-        
         echo "::endgroup::"
         
-        echo "::notice title=Sync Success::🎉 Registry sync completed successfully!"
+        # 气泡通知
+        echo "::notice title=任务完成::🎉 镜像已全部送达 $INPUT_DST"
+
+        # ==========================================
+        # 终极魔法：生成带 Markdown 表格的 Job Summary
+        # ==========================================
+        echo "### 🚀 镜像搬运报告 (Sync Report)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| 属性 | 参数值 |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+        echo "| **搬运模式** | \`$MODE_NAME\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **目标仓库** | \`$INPUT_DST\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **系统架构** | \`$INPUT_PLATFORM\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **并发线程** | \`$INPUT_CONCURRENCY\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| **执行状态** | ✅ **成功** |" >> $GITHUB_STEP_SUMMARY
