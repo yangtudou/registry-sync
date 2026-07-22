@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/yyysay/registry-sync/internal/config"
 	"github.com/yyysay/registry-sync/internal/destination"
@@ -12,6 +13,22 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("usage: registry-sync <command>")
+		fmt.Println("commands:")
+		fmt.Println("  plan")
+		return
+	}
+
+	switch os.Args[1] {
+	case "plan":
+		plan()
+	default:
+		log.Fatalf("unknown command: %s", os.Args[1])
+	}
+}
+
+func plan() {
 	cfg, err := config.Load("config.yaml")
 	if err != nil {
 		log.Fatal(err)
