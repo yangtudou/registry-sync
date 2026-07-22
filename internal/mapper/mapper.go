@@ -1,57 +1,54 @@
 package mapper
 
 import (
-	"path"
-
 	"github.com/yyysay/registry-sync/internal/image"
 )
 
-type RepositoryMode int
+type Mode string
 
 const (
-	Preserve RepositoryMode = iota
-	Basename
+	Basename Mode = "basename"
+	Preserve Mode = "preserve"
 )
 
 type Mapper struct {
-	Mode RepositoryMode
+	mode Mode
 }
 
-func New(mode RepositoryMode) *Mapper {
+func New(mode Mode) *Mapper {
 	return &Mapper{
-		Mode: mode,
+		mode: mode,
 	}
 }
 
-func (m *Mapper) Map(src *image.Image) *image.Image {
-	target := *src
+func (m *Mapper) Map(img *image.Image) *image.Image {
+	dst := &image.Image{
+		Registry: img.Registry,
+		Tag:      img.Tag,
+	}
 
-	switch m.Mode {
+	switch m.mode {
+	case Preserve:
+		dst.Name = img.Name
+		dst.Namespace = img.Namespace
+
 	case Basename:
-		target.Name = path.Base(src.Name)
+		dst.Name = basename(img.Name)
+
+	default:
+		dst.Name = img.Name
+		dst.Namespace = img.Namespace
 	}
 
-	target.Reference = buildReference(&target)
-
-	return &target
+	return dst
 }
 
-func buildReference(img *image.Image) string {
-	ref := ""
-
-	if img.Registry != "" {
-		ref += img.Registry + "/"
+func basename(name string) string {
+	for i := len(name) - 1; i >= 0; i-- {
+		if name[i] == '/' {
+			return name[i+1:]
+		}
 	}
 
-	ref += img.Name
-
-	if img.Tag != "" {
-		ref += ":" + img.Tag
-	}
-
-	if img.Digest != "" {
-		ref += "@" + img.Digest
-	}
-
-	return ref
+	return name
 }
