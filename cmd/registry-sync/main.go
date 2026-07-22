@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/yyysay/registry-sync/internal/config"
 	"github.com/yyysay/registry-sync/internal/destination"
 	"github.com/yyysay/registry-sync/internal/image"
 	"github.com/yyysay/registry-sync/internal/mapper"
@@ -11,14 +12,25 @@ import (
 )
 
 func main() {
+	cfg, err := config.Load("config.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	images, err := image.Load("images.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	mode := mapper.Basename
+
+	if cfg.Destination.Mode == "preserve" {
+		mode = mapper.Preserve
+	}
+
 	dst := destination.New(
-		"registry.example.com/myspace",
-		mapper.New(mapper.Basename),
+		cfg.Destination.Registry,
+		mapper.New(mode),
 	)
 
 	tasks := task.Generate(images, dst)
