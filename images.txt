@@ -1,3 +1,0 @@
-nginx:latest
-ghcr.io/sagernet/sing-box:latest
-cloudflare/cloudflared:latest
