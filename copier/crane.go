@@ -3,12 +3,10 @@ package copier
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"registry-sync/engine"
 
 	"github.com/google/go-containerregistry/pkg/crane"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 type CraneCopier struct {
@@ -60,23 +58,10 @@ func (c *CraneCopier) Copy(
 
 		fmt.Println()
 
-		parts := strings.Split(
-			platform[0],
-			"/",
+		opts = append(
+			opts,
+			buildPlatformOption(platform)...,
 		)
-
-		if len(parts) == 2 {
-
-			opts = append(
-				opts,
-				crane.WithPlatform(
-					&v1.Platform{
-						OS:           parts[0],
-						Architecture: parts[1],
-					},
-				),
-			)
-		}
 	}
 
 	fmt.Println("ENGINE:")
@@ -91,6 +76,7 @@ func (c *CraneCopier) Copy(
 	)
 
 	if err != nil {
+
 		fmt.Println("STATUS:")
 		fmt.Println(" FAILED")
 
@@ -98,6 +84,7 @@ func (c *CraneCopier) Copy(
 		fmt.Println(" ", err)
 
 		fmt.Println()
+
 		return err
 	}
 
