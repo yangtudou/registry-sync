@@ -1,6 +1,10 @@
 # private
 ToAliyun.yaml
 
+# cli
+registry-sync
+registry-sync.exe
+
 # macOS
 .DS_Store
 **/.DS_Store
