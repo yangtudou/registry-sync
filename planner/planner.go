@@ -2,6 +2,7 @@ package planner
 
 import (
 	"registry-sync/config"
+	"registry-sync/mapper"
 	"registry-sync/model"
 )
 
@@ -30,12 +31,12 @@ func Build(cfg *config.Config) []model.Plan {
 			for _, tag := range tags {
 
 				plans = append(plans, model.Plan{
-					Image: model.Image{
-						Registry:   registry,
-						Repository: repo,
-						Tag:        tag,
-						Platform:   platform,
-					},
+					Image: mapper.ConvertImage(
+						registry,
+						repo,
+						tag,
+						platform,
+					),
 
 					Mirrors: resolveMirrors(cfg),
 					Targets: resolveTargets(cfg, source),

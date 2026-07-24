@@ -2,6 +2,7 @@ package planner
 
 import (
 	"registry-sync/config"
+	"registry-sync/mapper"
 	"registry-sync/model"
 )
 
@@ -19,7 +20,7 @@ func resolveMirrors(cfg *config.Config) []model.Mirror {
 			Name: item.Name,
 			URL:  item.URL,
 			Type: model.MirrorType(item.Type),
-			Auth: convertAuth(item.Auth),
+			Auth: mapper.ConvertAuth(item.Auth),
 		})
 	}
 

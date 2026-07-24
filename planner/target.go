@@ -2,6 +2,7 @@ package planner
 
 import (
 	"registry-sync/config"
+	"registry-sync/mapper"
 	"registry-sync/model"
 )
 
@@ -39,20 +40,9 @@ func resolveTargets(
 			Registry:  dest.Registry,
 			Namespace: dest.Namespace,
 			Flatten:   dest.Flatten,
-			Auth:      convertAuth(dest.Auth),
+			Auth:      mapper.ConvertAuth(dest.Auth),
 		})
 	}
 
 	return targets
-}
-
-func convertAuth(auth *config.AuthConfig) *model.Auth {
-	if auth == nil {
-		return nil
-	}
-
-	return &model.Auth{
-		Username: auth.Username,
-		Password: auth.Password,
-	}
 }
