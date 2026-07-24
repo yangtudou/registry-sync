@@ -2,7 +2,6 @@ package copier
 
 import (
 	"context"
-	"fmt"
 
 	"registry-sync/engine"
 
@@ -31,43 +30,14 @@ func (c *CraneCopier) Copy(
 	platform []string,
 ) error {
 
-	fmt.Println("CRANE COPY")
-	fmt.Println("==========")
-
-	fmt.Println("SOURCE:")
-	fmt.Println(" ", source)
-
-	fmt.Println()
-
-	fmt.Println("TARGET:")
-	fmt.Println(" ", target)
-
-	fmt.Println()
-
 	opts := []crane.Option{
 		crane.WithContext(ctx),
 	}
 
-	if len(platform) > 0 {
-
-		fmt.Println("PLATFORM:")
-
-		for _, p := range platform {
-			fmt.Println(" ", p)
-		}
-
-		fmt.Println()
-
-		opts = append(
-			opts,
-			buildPlatformOption(platform)...,
-		)
-	}
-
-	fmt.Println("ENGINE:")
-	fmt.Println(" crane.Copy")
-
-	fmt.Println()
+	opts = append(
+		opts,
+		buildPlatformOption(platform)...,
+	)
 
 	err := c.copyFunc(
 		source,
@@ -77,20 +47,12 @@ func (c *CraneCopier) Copy(
 
 	if err != nil {
 
-		fmt.Println("STATUS:")
-		fmt.Println(" FAILED")
-
-		fmt.Println("ERROR:")
-		fmt.Println(" ", err)
-
-		fmt.Println()
+		dumpFailed(err)
 
 		return err
 	}
 
-	fmt.Println("STATUS:")
-	fmt.Println(" SUCCESS")
-	fmt.Println()
+	dumpSuccess()
 
 	return nil
 }

@@ -4,11 +4,30 @@ import (
 	"registry-sync/model"
 )
 
-func ResolveSource(plan model.Plan) string {
+func ResolveSources(
+	plan model.Plan,
+) []string {
 
-	return BuildImageName(
-		plan.Image.Registry,
-		plan.Image.Repository,
-		plan.Image.Tag,
+	var sources []string
+
+	// mirror 优先
+	sources = append(
+		sources,
+		BuildMirrorImages(
+			plan.Image,
+			plan.Mirrors,
+		)...,
 	)
+
+	// 原始源最后
+	sources = append(
+		sources,
+		BuildImageName(
+			plan.Image.Registry,
+			plan.Image.Repository,
+			plan.Image.Tag,
+		),
+	)
+
+	return sources
 }

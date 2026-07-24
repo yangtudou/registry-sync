@@ -38,7 +38,7 @@ func Build(cfg *config.Config) []model.Plan {
 						platform,
 					),
 
-					Mirrors: resolveMirrors(cfg),
+					Mirrors: mapper.ConvertMirrors(cfg.Mirror),
 					Targets: resolveTargets(cfg, source),
 				})
 			}
