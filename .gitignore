@@ -2,7 +2,7 @@
 ToAliyun.yaml
 
 # cli
-registry-sync
+/registry-sync
 registry-sync.exe
 
 # macOS
